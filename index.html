@@ -408,14 +408,12 @@ async function getGroupIdForUser(userName){
 async function pushToMonday(lead, claimedBy){
   const groupId = await getGroupIdForUser(claimedBy);
 
-  // Build column values using exact column IDs from board 18400486164
-  // Values are plain objects — JSON.stringify happens once when sent
+  // Column values using exact IDs and index-based format for status columns
+  // Status of Account (id:"status"): label index 4 = "New Lead Created"
+  // Type of Account (id:"color_mkxn2cj1"): label index 14 = "General Presale"
   const columnValues = {
-    // Status of Account (id: "status") → "New Lead Created"
-    "status": {"label": "New Lead Created"},
-    // Type of Account (id: "color_mkxn2cj1") → "General Presale"
-    "color_mkxn2cj1": {"label": "General Presale"},
-    // Phone (id: "phone_mkxn7m65")
+    "status":         {"index": 4},
+    "color_mkxn2cj1": {"index": 14},
     ...(lead.phone ? {"phone_mkxn7m65": {"phone": lead.phone, "countryShortName": "CA"}} : {})
   };
 
