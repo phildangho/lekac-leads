@@ -1,8 +1,8 @@
 // netlify/functions/monday.js
-// Monday.com GraphQL proxy with exact column IDs from board 18400486164
+// Minimal version — creates item in correct group, no column values
+// Column values will be added once exact labels are confirmed
  
 exports.handler = async (event) => {
-  // CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -23,9 +23,7 @@ exports.handler = async (event) => {
   if (!token) {
     return {
       statusCode: 500,
-      body: JSON.stringify({
-        error: 'MONDAY_API_TOKEN not set in Netlify environment variables.'
-      })
+      body: JSON.stringify({ error: 'MONDAY_API_TOKEN not set in Netlify environment variables.' })
     };
   }
  
@@ -36,23 +34,21 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON body' }) };
   }
  
-  // If this is a createLead request, build the mutation with correct column IDs
+  // createLead action — create item in correct group with name only
   if (body.action === 'createLead') {
     const { boardId, groupId, itemName, phone } = body;
  
-    // Column values using exact IDs from your board
-    const columnValues = {
-      // Status of Account (id: "status") → "New Lead Created"
-      "status": { "label": "New Lead Created" },
+    // Build column values carefully — only include phone for now
+    // Status and Type will be added manually on the board until labels are confirmed
+    const columnValues = {};
  
-      // Type of Account (id: "color_mkxn2cj1") → "General Presale"
-      "color_mkxn2cj1": { "label": "General Presale" },
- 
-      // Phone (id: "phone_mkxn7m65") → phone number if available
-      ...(phone ? {
-        "phone_mkxn7m65": { "phone": phone, "countryShortName": "CA" }
-      } : {})
-    };
+    // Only add phone if it exists and is valid
+    if (phone && phone.trim()) {
+      columnValues['phone_mkxn7m65'] = {
+        phone: phone.trim(),
+        countryShortName: 'CA'
+      };
+    }
  
     const mutation = `
       mutation($boardId: ID!, $groupId: String!, $itemName: String!, $columnValues: JSON!) {
@@ -115,7 +111,7 @@ exports.handler = async (event) => {
     }
   }
  
-  // Generic GraphQL passthrough for all other queries (board groups, connection check etc.)
+  // Generic GraphQL passthrough for all other queries
   try {
     const response = await fetch('https://api.monday.com/v2', {
       method: 'POST',
@@ -145,3 +141,4 @@ exports.handler = async (event) => {
     };
   }
 };
+ 
