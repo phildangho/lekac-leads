@@ -330,13 +330,19 @@ function resetSetup(){
 
 // ── MONDAY.COM ────────────────────────────────────────────────────────────────
 async function mondayQuery(query, variables={}){
+  const payload = {query, variables};
+  console.log('Monday request:', JSON.stringify(payload));
   const res = await fetch('/.netlify/functions/monday', {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({query, variables})
+    body: JSON.stringify(payload)
   });
-  if(!res.ok) throw new Error(`Netlify function error ${res.status} — make sure monday.js is in netlify/functions/ and MONDAY_API_TOKEN is set in Netlify environment variables.`);
+  if(!res.ok) throw new Error(`Netlify function error ${res.status}`);
   const data = await res.json();
-  if(data.errors) throw new Error(data.errors.map(e=>e.message).join(', '));
+  console.log('Monday response:', JSON.stringify(data));
+  if(data.errors){
+    console.error('Monday errors:', JSON.stringify(data.errors));
+    throw new Error(data.errors.map(e=>e.message).join(', '));
+  }
   return data;
 }
 
@@ -421,9 +427,9 @@ async function pushToMonday(lead, claimedBy){
   `;
 
   const result = await mondayQuery(mutation, {
-    boardId: BOARD_ID,
-    groupId: groupId,
-    itemName: lead.name
+    boardId: String(BOARD_ID),
+    groupId: String(groupId),
+    itemName: String(lead.name)
   });
 
   return result?.data?.create_item?.id;
