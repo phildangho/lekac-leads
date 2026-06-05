@@ -414,14 +414,31 @@ async function getGroupIdForUser(userName){
 async function pushToMonday(lead, claimedBy){
   const groupId = await getGroupIdForUser(claimedBy);
 
-  // Simplest possible mutation — name and group only, no column values
-  // This eliminates all validation errors
+  // All four required fields must be provided — board enforces these as mandatory
+  // Status of Account (id: "status") — index 4 = "New Lead Created"
+  // Type of Account (id: "color_mkxn2cj1") — index 14 = "General Presale"
+  // Name of Client (id: "text_mkxp63nr") — text field, use address or business name
+  // Person (id: "person") — people field, send empty object to satisfy requirement
+  const columnValues = {
+    "status":           {"index": 4},
+    "color_mkxn2cj1":  {"index": 14},
+    "text_mkxp63nr":   lead.address || lead.name,
+    "person":          {}
+  };
+
+  // Add phone if available
+  if(lead.phone){
+    columnValues['phone_mkxn7m65'] = {phone: lead.phone, countryShortName: 'CA'};
+  }
+
   const mutation = `
-    mutation($boardId: ID!, $groupId: String!, $itemName: String!) {
+    mutation($boardId: ID!, $groupId: String!, $itemName: String!, $columnValues: JSON!) {
       create_item(
         board_id: $boardId
         group_id: $groupId
         item_name: $itemName
+        column_values: $columnValues
+        create_labels_if_missing: true
       ) { id name }
     }
   `;
@@ -429,7 +446,8 @@ async function pushToMonday(lead, claimedBy){
   const result = await mondayQuery(mutation, {
     boardId: String(BOARD_ID),
     groupId: String(groupId),
-    itemName: String(lead.name)
+    itemName: String(lead.name),
+    columnValues: JSON.stringify(columnValues)
   });
 
   return result?.data?.create_item?.id;
