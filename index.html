@@ -414,22 +414,18 @@ async function getGroupIdForUser(userName){
 async function pushToMonday(lead, claimedBy){
   const groupId = await getGroupIdForUser(claimedBy);
 
-  // All four required fields must be provided — board enforces these as mandatory
+  // Required fields on this board:
   // Status of Account (id: "status") — index 4 = "New Lead Created"
   // Type of Account (id: "color_mkxn2cj1") — index 14 = "General Presale"
-  // Name of Client (id: "text_mkxp63nr") — text field, use address or business name
-  // Person (id: "person") — people field, send empty object to satisfy requirement
+  // Name of Client (id: "text_mkxp63nr") — plain text, store address
+  // Person (id: "person") — empty object satisfies requirement
+  // Phone is NOT included — format causes validation errors, can be added manually
   const columnValues = {
-    "status":           {"index": 4},
-    "color_mkxn2cj1":  {"index": 14},
-    "text_mkxp63nr":   lead.address || lead.name,
-    "person":          {}
+    "status":          {"index": 4},
+    "color_mkxn2cj1": {"index": 14},
+    "text_mkxp63nr":  lead.address || lead.name,
+    "person":         {}
   };
-
-  // Add phone if available
-  if(lead.phone){
-    columnValues['phone_mkxn7m65'] = {phone: lead.phone, countryShortName: 'CA'};
-  }
 
   const mutation = `
     mutation($boardId: ID!, $groupId: String!, $itemName: String!, $columnValues: JSON!) {
