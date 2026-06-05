@@ -15,6 +15,13 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding:32px 24px}
 
+/* ── CONTACT INPUT ── */
+.contact-input-wrap{margin:10px 0 6px}
+.contact-input-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);display:block;margin-bottom:5px}
+.contact-input{width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:8px 11px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+.contact-input:focus{border-color:var(--accent)}
+.contact-input::placeholder{color:#444}
+
 /* ── SETUP ── */
 #setupScreen{max-width:440px;margin:60px auto}
 .setup-logo{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:3px;color:var(--accent);line-height:1;margin-bottom:4px;text-align:center}
@@ -442,7 +449,7 @@ async function pushToMonday(lead, claimedBy){
   const columnValues = {
     "status":          {"index": 4},
     "color_mkxn2cj1": {"index": 14},
-    "text_mkxp63nr":  lead.address || lead.name,
+    "text_mkxp63nr":  lead.contactName || '',
     ...(userId ? {"person": {"personsAndTeams": [{"id": parseInt(userId), "kind": "person"}]}} : {})
   };
 
@@ -611,10 +618,25 @@ function renderCard(card,lead,cfg){
   let cs='';
   if(mine){const ei=expiryInfo(info.claimedAt);cs=`<div class="claim-section"><div class="claim-row"><span class="claim-badge mine">✓ Claimed by you</span>${mondayBadge}<span class="expiry-text ${ei.soon?'soon':''}">Expires in ${ei.daysLeft}d</span></div><div class="expiry-bar"><div class="expiry-fill" style="width:${ei.pct}%;background:${ei.soon?'var(--accent2)':'var(--accent)'}"></div></div></div>`}
   else if(other){const ei=expiryInfo(info.claimedAt);cs=`<div class="claim-section"><div class="claim-row"><span class="claim-badge">🔒 ${esc(info.by)}</span><span class="expiry-text ${ei.soon?'soon':''}">Frees up in ${ei.daysLeft}d</span></div><div class="expiry-bar"><div class="expiry-fill" style="width:${ei.pct}%;background:#2a2a2a"></div></div></div>`}
-  card.innerHTML=`<div class="real-badge">✓ Verified · Google Places</div><div class="card-top"><div class="card-name">${esc(lead.name)}</div><div class="ind-tag">${icon} ${esc(lbl)}</div></div>${ratingRow}<div class="info-grid"><div class="row"><i class="row-ico">📍</i><span class="row-val">${esc(lead.address)}</span></div>${phoneRow}${webRow}${mapsRow}</div><div class="enrich-row"><a class="enrich-btn ig" href="${esc(lead.ig_search)}" target="_blank" rel="noopener">📸 Instagram</a><a class="enrich-btn" href="${esc(lead.google_search)}" target="_blank" rel="noopener">🔍 Google</a></div><div class="divider"></div><div class="pain-point">"${esc(lead.pain_point)}"</div>${cs}<div class="foot">${other?`<button class="btn-sm" disabled style="opacity:.3;cursor:default">Claimed</button>`:mine?`<button class="btn-sm copy-btn">Copy</button><button class="btn-unclaim">Release Lead</button>`:`<button class="btn-claim">Claim + Push to Monday</button><button class="btn-sm copy-btn">Copy</button>`}</div>`;
-  card.querySelector('.btn-claim')?.addEventListener('click',async()=>{const ok=await claimLead(lead,card.querySelector('.btn-claim'));if(ok){renderCard(card,lead,IND[lead.indKey]||cfg);refreshClaimedTab()}});
+  // Contact name input only shown on unclaimed cards
+  const contactInputHtml = (!mine && !other) ? `
+    <div class="contact-input-wrap">
+      <label class="contact-input-label">Contact name (optional)</label>
+      <input class="contact-input" placeholder="e.g. Sarah Kim, Owner" maxlength="80">
+    </div>` : '';
+
+  card.innerHTML=`<div class="real-badge">✓ Verified · Google Places</div><div class="card-top"><div class="card-name">${esc(lead.name)}</div><div class="ind-tag">${icon} ${esc(lbl)}</div></div>${ratingRow}<div class="info-grid"><div class="row"><i class="row-ico">📍</i><span class="row-val">${esc(lead.address)}</span></div>${phoneRow}${webRow}${mapsRow}</div><div class="enrich-row"><a class="enrich-btn ig" href="${esc(lead.ig_search)}" target="_blank" rel="noopener">📸 Instagram</a><a class="enrich-btn" href="${esc(lead.google_search)}" target="_blank" rel="noopener">🔍 Google</a></div><div class="divider"></div><div class="pain-point">"${esc(lead.pain_point)}"</div>${contactInputHtml}${cs}<div class="foot">${other?`<button class="btn-sm" disabled style="opacity:.3;cursor:default">Claimed</button>`:mine?`<button class="btn-sm copy-btn">Copy</button><button class="btn-unclaim">Release Lead</button>`:`<button class="btn-claim">Claim + Push to Monday</button><button class="btn-sm copy-btn">Copy</button>`}</div>`;
+  card.querySelector('.btn-claim')?.addEventListener('click',async()=>{
+    // Read contact name from input field before claiming
+    const contactInput = card.querySelector('.contact-input');
+    if(contactInput && contactInput.value.trim()){
+      lead.contactName = contactInput.value.trim();
+    }
+    const ok=await claimLead(lead,card.querySelector('.btn-claim'));
+    if(ok){renderCard(card,lead,IND[lead.indKey]||cfg);refreshClaimedTab()}
+  });
   card.querySelector('.btn-unclaim')?.addEventListener('click',async()=>{if(!confirm('Release this lead for your team?'))return;await unclaimLead(lead);renderCard(card,lead,IND[lead.indKey]||cfg);refreshClaimedTab()});
-  card.querySelector('.copy-btn')?.addEventListener('click',function(){navigator.clipboard.writeText([`Business: ${lead.name}`,`Address: ${lead.address}`,`Phone: ${lead.phone||'Not listed'}`,`Website: ${lead.website||'Not listed'}`,lead.rating?`Rating: ${lead.rating} (${lead.review_count} reviews)`:'',`Google Maps: ${lead.maps_url||'N/A'}`,`Instagram Search: ${lead.ig_search}`,`Packaging Need: ${lead.packaging_need}`].filter(Boolean).join('\n')).then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1600)})});
+  card.querySelector('.copy-btn')?.addEventListener('click',function(){navigator.clipboard.writeText([`Business: ${lead.name}`,lead.contactName?`Contact: ${lead.contactName}`:'',`Address: ${lead.address}`,`Phone: ${lead.phone||'Not listed'}`,`Website: ${lead.website||'Not listed'}`,lead.rating?`Rating: ${lead.rating} (${lead.review_count} reviews)`:'',`Google Maps: ${lead.maps_url||'N/A'}`,`Instagram Search: ${lead.ig_search}`,`Packaging Need: ${lead.packaging_need}`].filter(Boolean).join('\n')).then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1600)})});
 }
 
 function showSkeletons(){const g=document.getElementById('grid');g.innerHTML='';for(let i=0;i<8;i++){const c=document.createElement('div');c.className='skeleton-card';c.innerHTML=`<div class="skel" style="width:30%;height:9px;margin-bottom:12px"></div><div class="skel" style="width:65%;height:15px;margin-bottom:12px"></div><div class="skel" style="width:40%;margin-bottom:14px"></div><div class="skel" style="width:85%"></div><div class="skel" style="width:60%;margin-top:8px"></div><div class="skel" style="width:72%;margin-top:8px"></div>`;g.appendChild(c)}}
