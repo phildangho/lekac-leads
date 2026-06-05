@@ -408,14 +408,23 @@ async function getGroupIdForUser(userName){
 async function pushToMonday(lead, claimedBy){
   const groupId = await getGroupIdForUser(claimedBy);
 
-  // Column values using exact IDs and index-based format for status columns
-  // Status of Account (id:"status"): label index 4 = "New Lead Created"
-  // Type of Account (id:"color_mkxn2cj1"): label index 14 = "General Presale"
-  const columnValues = {
-    "status":         {"index": 4},
-    "color_mkxn2cj1": {"index": 14},
-    ...(lead.phone ? {"phone_mkxn7m65": {"phone": lead.phone, "countryShortName": "CA"}} : {})
-  };
+  // Only set fields we know work — name goes in as item name
+  // Phone is the only column value we set directly
+  // Address and website go into the item name as extra context
+  const columnValues = {};
+
+  // Phone (id: "phone_mkxn7m65")
+  if(lead.phone){
+    columnValues['phone_mkxn7m65'] = {
+      phone: lead.phone,
+      countryShortName: 'CA'
+    };
+  }
+
+  // Name of Client text field (id: "text_mkxp63nr") — store address
+  if(lead.address){
+    columnValues['text_mkxp63nr'] = lead.address;
+  }
 
   const mutation = `
     mutation($boardId: ID!, $groupId: String!, $itemName: String!, $columnValues: JSON!) {
@@ -424,7 +433,6 @@ async function pushToMonday(lead, claimedBy){
         group_id: $groupId
         item_name: $itemName
         column_values: $columnValues
-        create_labels_if_missing: true
       ) { id name }
     }
   `;
