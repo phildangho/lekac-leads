@@ -285,14 +285,35 @@ const SETTINGS_KEY = 'lekac:settings:v3';
 const BOARD_ID_DEFAULT = '18400486164';
 
 // ── GROUP ROUTING ─────────────────────────────────────────────────────────────
-// Maps login name (case-insensitive) to Monday.com group name fragment.
-// The app fetches real group IDs from the board on login so no hardcoding needed.
-// Add more names here as your team grows — just match the group name on your board exactly.
 const NAME_TO_GROUP = {
-  'phil':     'Phil List of Clients',
-  'jennifer': 'Jennifer List of Clients'
+  'phil':      'Phil List of Clients',
+  'philippe':  'Phil List of Clients',
+  'jennifer':  'Jennifer List of Clients',
+  'gabby':     'Gabby List of Clients',
+  'gabrielle': 'Gabby List of Clients',
+  'teresa':    'Teresa List of Clients',
+  'andy':      'Phil List of Clients',
+  'samneet':   'Phil List of Clients',
+  'cathy':     'Phil List of Clients',
+  'mia':       'Phil List of Clients',
+  'zoe':       'Phil List of Clients'
 };
-const DEFAULT_GROUP = "To Be Assigned (from Gabby's Old Lead Follow-Up)";
+const DEFAULT_GROUP = "To Be Assigned (from Gabby's Old Lead Follow Up)";
+
+// Maps login name to Monday.com user ID for the Person column
+const NAME_TO_USER_ID = {
+  'phil':      '47467965',
+  'philippe':  '47467965',
+  'jennifer':  '17748419',
+  'gabby':     '17924606',
+  'gabrielle': '17924606',
+  'teresa':    '73736554',
+  'andy':      '17706516',
+  'samneet':   '33052655',
+  'cathy':     '47635554',
+  'mia':       '49511764',
+  'zoe':       '66471296'
+};
 
 // Cache for board groups fetched from Monday.com
 let boardGroupsCache = null;
@@ -414,17 +435,15 @@ async function getGroupIdForUser(userName){
 async function pushToMonday(lead, claimedBy){
   const groupId = await getGroupIdForUser(claimedBy);
 
-  // Required fields on this board:
-  // Status of Account (id: "status") — index 4 = "New Lead Created"
-  // Type of Account (id: "color_mkxn2cj1") — index 14 = "General Presale"
-  // Name of Client (id: "text_mkxp63nr") — plain text, store address
-  // Person (id: "person") — empty object satisfies requirement
-  // Phone is NOT included — format causes validation errors, can be added manually
+  // All required fields — mapped to exact Monday column IDs
+  const nameLower = (claimedBy||'').toLowerCase().trim();
+  const userId = NAME_TO_USER_ID[nameLower] || null;
+
   const columnValues = {
     "status":          {"index": 4},
     "color_mkxn2cj1": {"index": 14},
     "text_mkxp63nr":  lead.address || lead.name,
-    "person":         {}
+    ...(userId ? {"person": {"personsAndTeams": [{"id": parseInt(userId), "kind": "person"}]}} : {})
   };
 
   const mutation = `
