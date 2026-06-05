@@ -15,6 +15,16 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding:32px 24px}
 
+/* ── CLAIMED SUB-TABS ── */
+.sub-tabs{display:flex;gap:2px;margin-bottom:20px;background:var(--surface);border-radius:var(--radius-sm);padding:3px;width:100%;border:1px solid var(--border)}
+.sub-tab{flex:1;padding:7px 10px;border-radius:4px;font-size:12px;cursor:pointer;color:var(--muted2);border:none;background:none;font-family:'DM Sans',sans-serif;transition:background .15s,color .15s;text-align:center;white-space:nowrap}
+.sub-tab.active{background:var(--surface3);color:var(--text)}
+.sub-tab-count{display:inline-block;background:rgba(200,240,96,.12);color:var(--accent);border-radius:3px;padding:0 5px;font-size:10px;margin-left:4px}
+.claimed-section{display:none}
+.claimed-section.active{display:block}
+.claimed-item .release-btn{background:transparent;border:1px solid var(--border2);color:var(--muted2);padding:4px 10px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:border-color .15s,color .15s;white-space:nowrap;flex-shrink:0}
+.claimed-item .release-btn:hover{border-color:var(--red);color:var(--red)}
+
 /* ── CONTACT INPUT ── */
 .contact-input-wrap{margin:10px 0 6px}
 .contact-input-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted2);display:block;margin-bottom:5px}
@@ -282,7 +292,16 @@ select option{background:var(--surface2)}
     </div>
   </div>
 
-  <div id="pane-claimed" style="display:none"><div id="claimedList"></div></div>
+  <div id="pane-claimed" style="display:none">
+    <div class="sub-tabs">
+      <button class="sub-tab active" id="sub-tab-phil"     onclick="showSubTab('phil')">Phil <span class="sub-tab-count" id="count-phil">0</span></button>
+      <button class="sub-tab"        id="sub-tab-jennifer" onclick="showSubTab('jennifer')">Jennifer <span class="sub-tab-count" id="count-jennifer">0</span></button>
+      <button class="sub-tab"        id="sub-tab-others"   onclick="showSubTab('others')">Others <span class="sub-tab-count" id="count-others">0</span></button>
+    </div>
+    <div class="claimed-section active" id="claimed-phil"></div>
+    <div class="claimed-section"        id="claimed-jennifer"></div>
+    <div class="claimed-section"        id="claimed-others"></div>
+  </div>
 </div>
 
 <script>
@@ -641,12 +660,75 @@ function renderCard(card,lead,cfg){
 
 function showSkeletons(){const g=document.getElementById('grid');g.innerHTML='';for(let i=0;i<8;i++){const c=document.createElement('div');c.className='skeleton-card';c.innerHTML=`<div class="skel" style="width:30%;height:9px;margin-bottom:12px"></div><div class="skel" style="width:65%;height:15px;margin-bottom:12px"></div><div class="skel" style="width:40%;margin-bottom:14px"></div><div class="skel" style="width:85%"></div><div class="skel" style="width:60%;margin-top:8px"></div><div class="skel" style="width:72%;margin-top:8px"></div>`;g.appendChild(c)}}
 
+// Which sub-tab is active in Claimed Leads
+let activeSubTab = 'phil';
+
+function showSubTab(tab){
+  activeSubTab = tab;
+  ['phil','jennifer','others'].forEach(t=>{
+    document.getElementById(`sub-tab-${t}`).className='sub-tab'+(t===tab?' active':'');
+    document.getElementById(`claimed-${t}`).className='claimed-section'+(t===tab?' active':'');
+  });
+}
+
 async function refreshClaimedTab(){
   await loadClaimed();
-  const c=document.getElementById('claimedList');
-  const entries=Object.values(claimed).sort((a,b)=>b.claimedAt-a.claimedAt);
-  if(!entries.length){c.innerHTML=emptyHTML('🔒','No leads claimed yet','Find and claim leads to track them here');return}
-  c.innerHTML='<div class="claimed-list">'+entries.map(e=>{const ei=expiryInfo(e.claimedAt),mine=e.by===currentUser,mBadge=e.mondayItemId?`<span class="monday-pushed-badge">🟡 Monday.com</span>`:'';return`<div class="claimed-item"><div class="claimed-info"><div class="claimed-name">${esc(e.leadData.name)}${mBadge}</div><div class="claimed-meta">${esc(e.leadData.address||e.leadData.region)} · ${esc(e.leadData.industry||'')}</div></div><span class="claimed-by">${esc(e.by)}${mine?' (you)':''}</span><span class="expiry-text ${ei.soon?'soon':''}">${ei.soon?'⚠ ':''}${ei.daysLeft}d left</span></div>`;}).join('')+'</div>';
+  const entries = Object.values(claimed).sort((a,b)=>b.claimedAt-a.claimedAt);
+
+  // Categorise entries
+  const PHIL_NAMES     = ['phil','philippe'];
+  const JENNIFER_NAMES = ['jennifer'];
+
+  const philEntries     = entries.filter(e=>PHIL_NAMES.includes((e.by||'').toLowerCase().trim()));
+  const jenniferEntries = entries.filter(e=>JENNIFER_NAMES.includes((e.by||'').toLowerCase().trim()));
+  const othersEntries   = entries.filter(e=>!PHIL_NAMES.includes((e.by||'').toLowerCase().trim())&&!JENNIFER_NAMES.includes((e.by||'').toLowerCase().trim()));
+
+  // Update counts
+  document.getElementById('count-phil').textContent     = philEntries.length;
+  document.getElementById('count-jennifer').textContent = jenniferEntries.length;
+  document.getElementById('count-others').textContent   = othersEntries.length;
+
+  // Render each section
+  renderClaimedSection('claimed-phil',     philEntries);
+  renderClaimedSection('claimed-jennifer', jenniferEntries);
+  renderClaimedSection('claimed-others',   othersEntries);
+}
+
+function renderClaimedSection(containerId, entries){
+  const c = document.getElementById(containerId);
+  if(!entries.length){
+    c.innerHTML=emptyHTML('🔒','No leads here yet','Leads claimed by this team member will appear here');
+    return;
+  }
+  c.innerHTML='<div class="claimed-list">'+entries.map(e=>{
+    const ei=expiryInfo(e.claimedAt);
+    const mine=e.by===currentUser;
+    const mBadge=e.mondayItemId?`<span class="monday-pushed-badge">🟡 Monday.com</span>`:'';
+    const contactLine=e.leadData.contactName?` · ${esc(e.leadData.contactName)}`:'';
+    const key=leadKey(e.leadData);
+    return`<div class="claimed-item">
+      <div class="claimed-info">
+        <div class="claimed-name">${esc(e.leadData.name)}${mBadge}</div>
+        <div class="claimed-meta">${esc(e.leadData.address||e.leadData.region)} · ${esc(e.leadData.industry||'')}${contactLine}</div>
+      </div>
+      <span class="claimed-by">${esc(e.by)}${mine?' (you)':''}</span>
+      <span class="expiry-text ${ei.soon?'soon':''}">${ei.soon?'⚠ ':''}${ei.daysLeft}d left</span>
+      <button class="release-btn" data-key="${esc(key)}">Release</button>
+    </div>`;
+  }).join('')+'</div>';
+
+  // Attach release button events
+  c.querySelectorAll('.release-btn').forEach(btn=>{
+    btn.addEventListener('click', async()=>{
+      const key = btn.getAttribute('data-key');
+      const entry = claimed[key];
+      if(!entry) return;
+      if(!confirm(`Release "${entry.leadData.name}" so another team member can claim it?`)) return;
+      delete claimed[key];
+      await saveClaimed();
+      await refreshClaimedTab();
+    });
+  });
 }
 
 function showTab(t){document.getElementById('pane-find').style.display=t==='find'?'block':'none';document.getElementById('pane-claimed').style.display=t==='claimed'?'block':'none';document.getElementById('tab-find').className='tab'+(t==='find'?' active':'');document.getElementById('tab-claimed').className='tab'+(t==='claimed'?' active':'');if(t==='claimed')refreshClaimedTab()}
