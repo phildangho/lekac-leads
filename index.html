@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -408,18 +408,15 @@ async function getGroupIdForUser(userName){
 async function pushToMonday(lead, claimedBy){
   const groupId = await getGroupIdForUser(claimedBy);
 
-  // Column values — mapped to your board
-  // Status of Account = "New Lead Created"
-  // Type of Account = "General Presale"
-  // Phone = phone number if available
-  // We do NOT set First Contact date as requested
+  // Build column values using exact column IDs from board 18400486164
+  // Values are plain objects — JSON.stringify happens once when sent
   const columnValues = {
-    // Status of Account → "New Lead Created"
-    "status": JSON.stringify({label: "New Lead Created"}),
-    // Type of Account → "General Presale"
-    "type_of_account__1": JSON.stringify({label: "General Presale"}),
-    // Phone (if available)
-    ...(lead.phone ? {"phone": JSON.stringify({phone: lead.phone, countryShortName: "CA"})} : {})
+    // Status of Account (id: "status") → "New Lead Created"
+    "status": {"label": "New Lead Created"},
+    // Type of Account (id: "color_mkxn2cj1") → "General Presale"
+    "color_mkxn2cj1": {"label": "General Presale"},
+    // Phone (id: "phone_mkxn7m65")
+    ...(lead.phone ? {"phone_mkxn7m65": {"phone": lead.phone, "countryShortName": "CA"}} : {})
   };
 
   const mutation = `
