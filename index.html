@@ -408,31 +408,14 @@ async function getGroupIdForUser(userName){
 async function pushToMonday(lead, claimedBy){
   const groupId = await getGroupIdForUser(claimedBy);
 
-  // Only set fields we know work — name goes in as item name
-  // Phone is the only column value we set directly
-  // Address and website go into the item name as extra context
-  const columnValues = {};
-
-  // Phone (id: "phone_mkxn7m65")
-  if(lead.phone){
-    columnValues['phone_mkxn7m65'] = {
-      phone: lead.phone,
-      countryShortName: 'CA'
-    };
-  }
-
-  // Name of Client text field (id: "text_mkxp63nr") — store address
-  if(lead.address){
-    columnValues['text_mkxp63nr'] = lead.address;
-  }
-
+  // Simplest possible mutation — name and group only, no column values
+  // This eliminates all validation errors
   const mutation = `
-    mutation($boardId: ID!, $groupId: String!, $itemName: String!, $columnValues: JSON!) {
+    mutation($boardId: ID!, $groupId: String!, $itemName: String!) {
       create_item(
         board_id: $boardId
         group_id: $groupId
         item_name: $itemName
-        column_values: $columnValues
       ) { id name }
     }
   `;
@@ -440,8 +423,7 @@ async function pushToMonday(lead, claimedBy){
   const result = await mondayQuery(mutation, {
     boardId: BOARD_ID,
     groupId: groupId,
-    itemName: lead.name,
-    columnValues: JSON.stringify(columnValues)
+    itemName: lead.name
   });
 
   return result?.data?.create_item?.id;
