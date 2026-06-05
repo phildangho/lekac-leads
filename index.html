@@ -1,0 +1,621 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LeKAC Leads — GTA Real Business Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0a;--surface:#141414;--surface2:#1c1c1c;--surface3:#222;
+  --border:#252525;--border2:#303030;
+  --accent:#c8f060;--accent2:#f0a030;--red:#e05555;--monday:#f6b73c;
+  --text:#f0ece4;--muted2:#888;--radius:8px;--radius-sm:5px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding:32px 24px}
+
+/* ── SETUP ── */
+#setupScreen{max-width:440px;margin:60px auto}
+.setup-logo{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:3px;color:var(--accent);line-height:1;margin-bottom:4px;text-align:center}
+.setup-logo span{color:var(--text)}
+.setup-sub{font-size:11px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:28px;text-align:center}
+.setup-card{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:26px 22px;margin-bottom:14px}
+.setup-step{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:5px}
+.setup-title{font-size:16px;font-weight:500;color:var(--text);margin-bottom:7px}
+.setup-desc{font-size:13px;color:var(--muted2);line-height:1.7;margin-bottom:14px}
+.input-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted2);display:block;margin-bottom:7px}
+.input-wrap{position:relative;margin-bottom:10px}
+.setup-input{width:100%;background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:11px 42px 11px 13px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+.setup-input.no-icon{padding-right:13px}
+.setup-input:focus{border-color:var(--accent)}
+.setup-input::placeholder{color:#444}
+.toggle-vis{position:absolute;right:11px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted2);cursor:pointer;font-size:13px;padding:0}
+.setup-error{font-size:12px;color:var(--red);margin-top:6px;display:none;padding:7px 11px;background:rgba(224,85,85,.08);border-radius:4px;border:1px solid rgba(224,85,85,.2)}
+.btn-full{width:100%;background:var(--accent);color:#0a0a0a;border:none;padding:12px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s;margin-top:4px}
+.btn-full:hover{opacity:.85}
+.setup-note{font-size:11px;color:#444;line-height:1.6;margin-top:10px;text-align:center}
+.setup-note a{color:var(--muted2);text-decoration:none}.setup-note a:hover{color:var(--accent)}
+.monday-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--monday);background:rgba(246,183,60,.07);border:1px solid rgba(246,183,60,.2);border-radius:4px;padding:3px 9px;margin-bottom:12px}
+.routing-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+.routing-table th{text-align:left;color:var(--muted2);font-weight:400;padding:4px 8px;border-bottom:1px solid var(--border)}
+.routing-table td{padding:6px 8px;color:var(--text);border-bottom:1px solid var(--border)}
+.routing-table tr:last-child td{border-bottom:none}
+.routing-table .name-col{color:var(--accent);font-weight:500}
+.routing-table .group-col{color:var(--muted2);font-size:11px}
+
+/* ── LOGIN ── */
+#loginScreen{max-width:360px;margin:80px auto;text-align:center;display:none}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:3px;color:var(--accent);line-height:1;margin-bottom:4px}
+.login-logo span{color:var(--text)}
+.login-sub{font-size:12px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase;margin-bottom:32px}
+.login-input{width:100%;background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:13px 16px;border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;text-align:center;margin-bottom:12px;transition:border-color .2s}
+.login-input:focus{border-color:var(--accent)}
+.login-input::placeholder{color:#444}
+.login-meta{font-size:11px;color:#444;margin-top:14px;cursor:pointer;transition:color .15s}
+.login-meta:hover{color:var(--muted2)}
+
+/* ── APP ── */
+#appScreen{display:none}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.header-left{display:flex;align-items:baseline;gap:12px}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:2px;color:var(--accent);line-height:1}
+.logo span{color:var(--text)}
+.tagline{font-size:10px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.user-chip{font-size:12px;background:var(--surface);border:1px solid var(--border2);border-radius:20px;padding:5px 14px;display:flex;align-items:center;gap:8px}
+.user-chip span{color:var(--accent);font-weight:500}
+.btn-ghost{background:none;border:none;color:var(--muted2);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;padding:0;transition:color .15s}
+.btn-ghost:hover{color:var(--accent)}
+.monday-status{display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 10px;border-radius:20px;background:var(--surface);border:1px solid var(--border2)}
+.monday-dot{width:6px;height:6px;border-radius:50%;background:#444;flex-shrink:0}
+.monday-dot.connected{background:var(--monday)}.monday-dot.error{background:var(--red)}
+
+.controls{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-bottom:8px;align-items:end}
+label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted2);display:block;margin-bottom:7px}
+select{width:100%;background:var(--surface);border:1px solid var(--border2);color:var(--text);padding:10px 13px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;appearance:none;-webkit-appearance:none;outline:none;cursor:pointer;transition:border-color .2s}
+select:focus{border-color:var(--accent)}
+select option{background:var(--surface2)}
+.sw{position:relative}.sw::after{content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted2);pointer-events:none;font-size:11px}
+.btn{background:var(--accent);color:#0a0a0a;border:none;padding:10px 22px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s,transform .1s;white-space:nowrap}
+.btn:hover{opacity:.88;transform:translateY(-1px)}.btn:active{transform:none}.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-sm{background:transparent;border:1px solid var(--border2);color:var(--muted2);padding:6px 13px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:border-color .15s,color .15s}
+.btn-sm:hover{border-color:var(--accent);color:var(--text)}
+
+.status-bar{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted2);margin-bottom:20px;min-height:24px;margin-top:10px}
+.dot{width:6px;height:6px;border-radius:50%;background:#333;flex-shrink:0}
+.dot.on{background:var(--accent);animation:pulse 1.2s infinite}
+.dot.done{background:var(--accent)}.dot.err{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+
+.tabs{display:flex;gap:1px;margin-bottom:24px;background:var(--surface);border-radius:var(--radius-sm);padding:3px;width:fit-content;border:1px solid var(--border)}
+.tab{padding:7px 18px;border-radius:4px;font-size:13px;cursor:pointer;color:var(--muted2);border:none;background:none;font-family:'DM Sans',sans-serif;transition:background .15s,color .15s}
+.tab.active{background:var(--surface3);color:var(--text)}
+
+.meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px}
+.meta-count{font-size:13px;color:var(--muted2)}.meta-count strong{color:var(--accent)}
+.meta-actions{display:flex;gap:8px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;animation:fadeUp .35s ease both;transition:border-color .25s,transform .2s;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:transparent;transition:background .25s}
+.card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.card:hover::before{background:var(--accent)}
+.card.claimed-mine{border-color:#2e4a18;background:#0e1a08}.card.claimed-mine::before{background:var(--accent)}
+.card.claimed-other{border-color:#1e2e14;background:#0c140a}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.real-badge{font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;background:rgba(100,210,100,.07);color:#6dd46d;border:1px solid rgba(100,210,100,.14);margin-bottom:9px;display:inline-block}
+.monday-pushed-badge{font-size:9px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:3px;background:rgba(246,183,60,.07);color:var(--monday);border:1px solid rgba(246,183,60,.18);margin-left:6px;display:inline-block}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px}
+.card-name{font-weight:500;font-size:15px;line-height:1.3;flex:1;color:var(--text)}
+.ind-tag{font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:3px;background:rgba(200,240,96,.09);color:var(--accent);flex-shrink:0;border:1px solid rgba(200,240,96,.14)}
+.rating-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.stars{color:var(--accent2);font-size:12px}
+.rating-num{font-size:12px;color:var(--muted2)}
+.review-count{font-size:11px;color:#444}
+.info-grid{display:grid;gap:5px;margin-bottom:10px}
+.row{display:flex;gap:8px;font-size:12.5px;color:var(--muted2);align-items:flex-start;line-height:1.5}
+.row-ico{flex-shrink:0;width:15px;font-size:12px;margin-top:1px}
+.row-val{flex:1;word-break:break-word}
+.row-val a{color:var(--accent);text-decoration:none;transition:opacity .15s}
+.row-val a:hover{opacity:.7}
+.missing{color:#333;font-style:italic}
+.enrich-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.enrich-btn{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:4px 10px;border-radius:4px;text-decoration:none;cursor:pointer;border:1px solid var(--border2);color:var(--muted2);background:var(--surface2);transition:border-color .15s,color .15s;font-family:'DM Sans',sans-serif}
+.enrich-btn:hover{border-color:var(--accent);color:var(--text)}
+.enrich-btn.ig{border-color:rgba(240,160,48,.25);color:var(--accent2)}
+.enrich-btn.ig:hover{border-color:var(--accent2)}
+.divider{height:1px;background:var(--border);margin:12px 0}
+.pain-point{font-size:12px;color:#555;line-height:1.7;font-style:italic}
+.claim-section{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.claim-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.claim-badge{font-size:11px;padding:3px 9px;border-radius:3px;background:rgba(200,240,96,.07);color:var(--accent);border:1px solid rgba(200,240,96,.16)}
+.claim-badge.mine{background:rgba(200,240,96,.14);border-color:rgba(200,240,96,.28)}
+.expiry-text{font-size:11px;color:var(--muted2)}.expiry-text.soon{color:var(--accent2)}
+.expiry-bar{height:2px;background:var(--border);border-radius:2px;overflow:hidden}
+.expiry-fill{height:100%;border-radius:2px}
+.foot{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.btn-claim{background:var(--accent);color:#0a0a0a;border:none;padding:7px 16px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:opacity .15s}
+.btn-claim:hover{opacity:.83}.btn-claim:disabled{opacity:.5;cursor:not-allowed}
+.btn-unclaim{background:transparent;border:1px solid var(--border2);color:var(--muted2);padding:6px 12px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:border-color .15s,color .15s}
+.btn-unclaim:hover{border-color:var(--red);color:var(--red)}
+.skeleton-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px}
+.skel{background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;margin-bottom:9px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.empty{grid-column:1/-1;text-align:center;padding:64px 20px;color:var(--muted2)}
+.empty-ico{font-size:36px;margin-bottom:14px}
+.empty-title{font-size:15px;color:#444;margin-bottom:6px;font-weight:500}
+.empty-sub{font-size:13px;line-height:1.7;max-width:420px;margin:0 auto}
+.info-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 16px;margin-bottom:22px;font-size:13px;color:var(--muted2);line-height:1.75}
+.info-box strong{color:var(--text)}
+.claimed-list{display:grid;gap:10px}
+.claimed-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.claimed-info{flex:1;min-width:180px}
+.claimed-name{font-size:14px;font-weight:500;margin-bottom:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.claimed-meta{font-size:12px;color:var(--muted2)}
+.claimed-by{font-size:11px;color:var(--accent);background:rgba(200,240,96,.07);border-radius:3px;padding:2px 9px;border:1px solid rgba(200,240,96,.16)}
+.source-note{font-size:11px;color:#333;margin-bottom:20px;margin-top:2px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface3);border:1px solid var(--border2);border-radius:8px;padding:12px 18px;font-size:13px;color:var(--text);z-index:1000;animation:toastIn .25s ease;max-width:340px;line-height:1.5;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.toast.success{border-color:rgba(200,240,96,.3);color:var(--accent)}
+.toast.error{border-color:rgba(224,85,85,.3);color:var(--red)}
+.toast.monday{border-color:rgba(246,183,60,.3);color:var(--monday)}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:600px){.controls{grid-template-columns:1fr;gap:8px}header{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setupScreen">
+  <div class="setup-logo">LeKAC <span>Leads</span></div>
+  <div class="setup-sub">GTA Real Business Finder</div>
+
+  <div class="setup-card">
+    <div class="setup-step">Step 1 — Google Places</div>
+    <div class="setup-title">Google Places API Key</div>
+    <div class="setup-desc">Make sure <strong style="color:var(--text)">Maps JavaScript API</strong> and <strong style="color:var(--text)">Places API (New)</strong> are enabled in Google Cloud Console.</div>
+    <label class="input-label">Google API Key</label>
+    <div class="input-wrap">
+      <input class="setup-input" id="googleKeyInput" type="password" placeholder="AIzaSy…" autocomplete="off">
+      <button class="toggle-vis" onclick="toggleVis('googleKeyInput')">👁</button>
+    </div>
+    <div class="setup-error" id="googleKeyError"></div>
+  </div>
+
+  <div class="setup-card">
+    <div class="setup-step">Step 2 — Monday.com</div>
+    <div class="monday-badge">🟡 Monday.com Integration</div>
+    <div class="setup-title">Board Routing</div>
+    <div class="setup-desc">Leads are routed to the correct group based on the team member's login name. Here's how it works:</div>
+    <table class="routing-table">
+      <thead><tr><th>Login name</th><th>Goes into group</th></tr></thead>
+      <tbody>
+        <tr><td class="name-col">Phil</td><td class="group-col">Phil List of Clients</td></tr>
+        <tr><td class="name-col">Jennifer</td><td class="group-col">Jennifer List of Clients</td></tr>
+        <tr><td class="name-col">Anyone else</td><td class="group-col">To Be Assigned (from Gabby's Old Lead Follow-Up)</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:14px"></div>
+    <label class="input-label">Monday.com Board ID</label>
+    <input class="setup-input no-icon" id="boardIdInput" type="text" value="18400486164" style="margin-bottom:4px">
+    <div class="setup-error" id="boardError"></div>
+  </div>
+
+  <button class="btn-full" onclick="saveSetup()">Save & Continue</button>
+  <div class="setup-note" style="margin-top:10px">All settings saved in your browser only.</div>
+</div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-logo">LeKAC <span>Leads</span></div>
+  <div class="login-sub">GTA Real Business Finder</div>
+  <input class="login-input" id="nameInput" placeholder="Enter your name…" maxlength="40" onkeydown="if(event.key==='Enter')login()">
+  <button class="btn-full" onclick="login()" style="max-width:360px;margin:0 auto;display:block">Enter Workspace</button>
+  <div class="login-meta" onclick="resetSetup()">⚙ Change settings</div>
+</div>
+
+<!-- APP -->
+<div id="appScreen">
+  <header>
+    <div class="header-left">
+      <div class="logo">LeKAC <span>Leads</span></div>
+      <div class="tagline">GTA Real Business Finder</div>
+    </div>
+    <div class="header-right">
+      <div class="monday-status" id="mondayStatus">
+        <div class="monday-dot" id="mondayDot"></div>
+        <span id="mondayStatusText">Monday.com</span>
+      </div>
+      <div class="user-chip"><span id="userDisplay"></span><button class="btn-ghost" onclick="logout()">switch</button></div>
+      <button class="btn-ghost" onclick="resetSetup()">⚙ Settings</button>
+    </div>
+  </header>
+
+  <div class="info-box" id="routingInfo">
+    <strong>Real GTA businesses</strong> from Google Places. Clicking <strong>Claim + Push to Monday</strong> locks the lead to you for 6 months and pushes it to your Monday.com board — routed to the correct group based on your name, with Status set to <strong>"New Lead Created"</strong> and Type set to <strong>"General Presale"</strong>.
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-find" onclick="showTab('find')">Find Leads</button>
+    <button class="tab" id="tab-claimed" onclick="showTab('claimed')">Claimed Leads</button>
+  </div>
+
+  <div id="pane-find">
+    <div class="controls">
+      <div><label>Industry</label>
+        <div class="sw"><select id="ind">
+          <option value="">Select an industry…</option>
+          <option value="bakery">🧁 Bakery</option>
+          <option value="furniture">🪑 Furniture</option>
+          <option value="restaurant">🍽️ Restaurant</option>
+          <option value="clothing">👗 Clothing</option>
+          <option value="real_estate">🏠 Real Estate</option>
+        </select></div>
+      </div>
+      <div><label>GTA Sub-Region</label>
+        <div class="sw"><select id="reg">
+          <option>Toronto</option><option>Mississauga</option><option>Brampton</option>
+          <option>Markham</option><option>Vaughan</option><option>Scarborough</option><option>North York</option>
+        </select></div>
+      </div>
+      <div><label>&nbsp;</label><button class="btn" id="searchBtn" onclick="searchLeads()">Find Real Leads</button></div>
+    </div>
+    <div class="source-note">📍 Google Places (New) API · Leads auto-route to your Monday.com group on claim</div>
+    <div class="status-bar"><div class="dot" id="dot"></div><span id="statusTxt">Select an industry and region to find real GTA businesses</span></div>
+    <div id="meta" style="display:none" class="meta">
+      <div class="meta-count" id="metaTxt"></div>
+      <div class="meta-actions">
+        <button class="btn-sm" onclick="copyAll()">Copy Unclaimed</button>
+        <button class="btn-sm" onclick="clearResults()">Clear</button>
+      </div>
+    </div>
+    <div class="grid" id="grid">
+      <div class="empty"><div class="empty-ico">🔍</div><div class="empty-title">No results yet</div><div class="empty-sub">Pick an industry and region above</div></div>
+    </div>
+  </div>
+
+  <div id="pane-claimed" style="display:none"><div id="claimedList"></div></div>
+</div>
+
+<script>
+const SIX_MONTHS   = 6*30*24*60*60*1000;
+const STORAGE_KEY  = 'lekac:v14';
+const SETTINGS_KEY = 'lekac:settings:v3';
+const BOARD_ID_DEFAULT = '18400486164';
+
+// ── GROUP ROUTING ─────────────────────────────────────────────────────────────
+// Maps login name (case-insensitive) to Monday.com group name fragment.
+// The app fetches real group IDs from the board on login so no hardcoding needed.
+// Add more names here as your team grows — just match the group name on your board exactly.
+const NAME_TO_GROUP = {
+  'phil':     'Phil List of Clients',
+  'jennifer': 'Jennifer List of Clients'
+};
+const DEFAULT_GROUP = "To Be Assigned (from Gabby's Old Lead Follow-Up)";
+
+// Cache for board groups fetched from Monday.com
+let boardGroupsCache = null;
+
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+let GOOGLE_API_KEY = '', BOARD_ID = BOARD_ID_DEFAULT;
+
+function toggleVis(id){const i=document.getElementById(id);i.type=i.type==='password'?'text':'password'}
+
+function saveSetup(){
+  const gKey = document.getElementById('googleKeyInput').value.trim();
+  const bId  = document.getElementById('boardIdInput').value.trim() || BOARD_ID_DEFAULT;
+  document.getElementById('googleKeyError').style.display='none';
+  if(!gKey){showSetupErr('googleKeyError','Please enter your Google API key.');return}
+  if(!gKey.startsWith('AIza')){showSetupErr('googleKeyError','Google API keys start with "AIza" — check you copied the full key.');return}
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify({googleKey:gKey, boardId:bId}));
+  GOOGLE_API_KEY=gKey; BOARD_ID=bId;
+  document.getElementById('setupScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='block';
+}
+function showSetupErr(id,m){const e=document.getElementById(id);e.textContent=m;e.style.display='block'}
+function loadSettings(){
+  const s=localStorage.getItem(SETTINGS_KEY);
+  if(!s) return false;
+  try{const p=JSON.parse(s);if(!p.googleKey)return false;GOOGLE_API_KEY=p.googleKey;BOARD_ID=p.boardId||BOARD_ID_DEFAULT;return true}catch(e){return false}
+}
+function resetSetup(){
+  GOOGLE_API_KEY='';googleLoaded=false;boardGroupsCache=null;
+  if(window.__mapsScript){window.__mapsScript.remove();window.__mapsScript=null}
+  ['appScreen','loginScreen'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('setupScreen').style.display='block';
+  const s=localStorage.getItem(SETTINGS_KEY);
+  if(s){try{const p=JSON.parse(s);document.getElementById('googleKeyInput').value=p.googleKey||'';document.getElementById('boardIdInput').value=p.boardId||BOARD_ID_DEFAULT}catch(e){}}
+}
+
+// ── MONDAY.COM ────────────────────────────────────────────────────────────────
+async function mondayQuery(query, variables={}){
+  const res = await fetch('/.netlify/functions/monday', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({query, variables})
+  });
+  if(!res.ok) throw new Error(`Netlify function error ${res.status} — make sure monday.js is in netlify/functions/ and MONDAY_API_TOKEN is set in Netlify environment variables.`);
+  const data = await res.json();
+  if(data.errors) throw new Error(data.errors.map(e=>e.message).join(', '));
+  return data;
+}
+
+async function checkMondayConnection(){
+  try{
+    // Also fetch board groups at login time so routing is ready
+    await fetchBoardGroups();
+    document.getElementById('mondayDot').className='monday-dot connected';
+    document.getElementById('mondayStatusText').textContent='Monday.com ✓';
+  }catch(e){
+    document.getElementById('mondayDot').className='monday-dot error';
+    document.getElementById('mondayStatusText').textContent='Monday.com ✗';
+    console.warn('Monday.com:', e.message);
+  }
+}
+
+// Fetch all groups on the board and cache them
+async function fetchBoardGroups(){
+  if(boardGroupsCache) return boardGroupsCache;
+  const res = await mondayQuery(`
+    query($boardId: ID!) {
+      boards(ids: [$boardId]) {
+        groups { id title }
+      }
+    }
+  `, {boardId: BOARD_ID});
+  const groups = res?.data?.boards?.[0]?.groups || [];
+  boardGroupsCache = groups;
+  console.log('Board groups:', groups.map(g=>`${g.title} (${g.id})`).join(', '));
+  return groups;
+}
+
+// Find the right group ID for a given user name
+async function getGroupIdForUser(userName){
+  const groups = await fetchBoardGroups();
+  const nameLower = (userName||'').toLowerCase().trim();
+
+  // Check if this name matches a named group
+  const targetGroupName = NAME_TO_GROUP[nameLower] || DEFAULT_GROUP;
+
+  // Find the group by title (partial match, case-insensitive)
+  const match = groups.find(g =>
+    g.title.toLowerCase().includes(targetGroupName.toLowerCase()) ||
+    targetGroupName.toLowerCase().includes(g.title.toLowerCase())
+  );
+
+  if(match){
+    console.log(`Routing "${userName}" → group: "${match.title}" (${match.id})`);
+    return match.id;
+  }
+
+  // Fallback: find default group
+  const fallback = groups.find(g =>
+    g.title.toLowerCase().includes('to be assigned') ||
+    g.title.toLowerCase().includes('gabby') ||
+    g.title.toLowerCase().includes('unassigned')
+  );
+
+  if(fallback){
+    console.log(`No match for "${userName}", using fallback: "${fallback.title}" (${fallback.id})`);
+    return fallback.id;
+  }
+
+  // Last resort: first group on the board
+  console.warn(`Could not find group for "${userName}", using first group: "${groups[0]?.title}"`);
+  return groups[0]?.id || null;
+}
+
+async function pushToMonday(lead, claimedBy){
+  const groupId = await getGroupIdForUser(claimedBy);
+
+  // Column values — mapped to your board
+  // Status of Account = "New Lead Created"
+  // Type of Account = "General Presale"
+  // Phone = phone number if available
+  // We do NOT set First Contact date as requested
+  const columnValues = {
+    // Status of Account → "New Lead Created"
+    "status": JSON.stringify({label: "New Lead Created"}),
+    // Type of Account → "General Presale"
+    "type_of_account__1": JSON.stringify({label: "General Presale"}),
+    // Phone (if available)
+    ...(lead.phone ? {"phone": JSON.stringify({phone: lead.phone, countryShortName: "CA"})} : {})
+  };
+
+  const mutation = `
+    mutation($boardId: ID!, $groupId: String!, $itemName: String!, $columnValues: JSON!) {
+      create_item(
+        board_id: $boardId
+        group_id: $groupId
+        item_name: $itemName
+        column_values: $columnValues
+        create_labels_if_missing: true
+      ) { id name }
+    }
+  `;
+
+  const result = await mondayQuery(mutation, {
+    boardId: BOARD_ID,
+    groupId: groupId,
+    itemName: lead.name,
+    columnValues: JSON.stringify(columnValues)
+  });
+
+  return result?.data?.create_item?.id;
+}
+
+// ── GOOGLE MAPS ───────────────────────────────────────────────────────────────
+let googleLoaded = false;
+function loadGoogleMaps(){
+  return new Promise((resolve,reject)=>{
+    if(googleLoaded){resolve();return}
+    if(!GOOGLE_API_KEY){reject(new Error('No API key'));return}
+    window.__mapsReady=async()=>{
+      try{await google.maps.importLibrary('places');googleLoaded=true;resolve()}catch(e){reject(e)}
+    };
+    const s=document.createElement('script');
+    s.src=`https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&callback=__mapsReady&loading=async&v=weekly`;
+    s.async=true;s.onerror=()=>reject(new Error('Could not load Google Maps SDK.'));
+    window.__mapsScript=s;document.head.appendChild(s);
+  });
+}
+async function placesSearch(textQuery,lat,lng){
+  const {Place}=await google.maps.importLibrary('places');
+  const center=new google.maps.LatLng(lat,lng);
+  const req={textQuery,fields:['displayName','formattedAddress','nationalPhoneNumber','websiteURI','rating','userRatingCount','googleMapsURI','id'],locationBias:new google.maps.Circle({center,radius:6000}),maxResultCount:20,region:'ca'};
+  try{const{places}=await Place.searchByText(req);return places||[]}
+  catch(e){console.warn('Retrying without locationBias');const{places}=await Place.searchByText({...req,locationBias:undefined});return places||[]}
+}
+
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+let claimed={};
+async function loadClaimed(){
+  try{const r=await window.storage.get(STORAGE_KEY,true);claimed=r?JSON.parse(r.value):{}}
+  catch(e){try{const s=localStorage.getItem(STORAGE_KEY);claimed=s?JSON.parse(s):{}}catch(_){claimed={}}}
+  pruneExpired();
+}
+async function saveClaimed(){
+  try{await window.storage.set(STORAGE_KEY,JSON.stringify(claimed),true)}
+  catch(e){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(claimed))}catch(_){}}
+}
+function pruneExpired(){const now=Date.now();let c=false;for(const k of Object.keys(claimed)){if(now-claimed[k].claimedAt>=SIX_MONTHS){delete claimed[k];c=true}}if(c)saveClaimed()}
+function leadKey(l){return String(l.place_id||l.name).slice(0,40)}
+function isClaimed(l){const k=leadKey(l);return claimed[k]&&Date.now()-claimed[k].claimedAt<SIX_MONTHS}
+function claimInfo(l){return claimed[leadKey(l)]}
+
+async function claimLead(lead, btn){
+  await loadClaimed();
+  if(isClaimed(lead)){alert('Just claimed by someone else!');return false}
+  if(btn){btn.disabled=true;btn.textContent='Claiming…'}
+  let mondayItemId=null;
+  try{
+    mondayItemId = await pushToMonday(lead, currentUser);
+    const groupName = NAME_TO_GROUP[currentUser.toLowerCase()] || DEFAULT_GROUP;
+    showToast(`✓ "${lead.name}" added to Monday.com → ${groupName}`, 'monday');
+  }catch(e){
+    console.warn('Monday push failed:',e.message);
+    showToast(`Lead claimed — Monday.com push failed:\n${e.message}`, 'error');
+  }
+  claimed[leadKey(lead)]={by:currentUser,claimedAt:Date.now(),leadData:lead,mondayItemId};
+  await saveClaimed();
+  return true;
+}
+async function unclaimLead(l){delete claimed[leadKey(l)];await saveClaimed()}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+let currentUser='', allResults=[];
+function login(){
+  const n=document.getElementById('nameInput').value.trim();
+  if(!n){document.getElementById('nameInput').style.borderColor='var(--red)';return}
+  currentUser=n;
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  document.getElementById('userDisplay').textContent=n;
+  // Show which group this user routes to
+  const groupName = NAME_TO_GROUP[n.toLowerCase()] || DEFAULT_GROUP;
+  document.getElementById('routingInfo').innerHTML=`<strong>Signed in as ${esc(n)}</strong> — your claimed leads will go to <strong style="color:var(--monday)">${esc(groupName)}</strong> on Monday.com, with Status: <strong>"New Lead Created"</strong> and Type: <strong>"General Presale"</strong>.`;
+  loadClaimed();
+  checkMondayConnection();
+}
+function logout(){
+  currentUser='';allResults=[];boardGroupsCache=null;
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('loginScreen').style.display='block';
+  document.getElementById('nameInput').value='';
+  resetGrid();document.getElementById('meta').style.display='none';
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function rnd(a){return a[Math.floor(Math.random()*a.length)]}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function emptyHTML(i,t,s){return`<div class="empty"><div class="empty-ico">${i}</div><div class="empty-title">${esc(t)}</div><div class="empty-sub">${s}</div></div>`}
+function expiryInfo(ca){const e=Date.now()-ca,p=Math.min(100,e/SIX_MONTHS*100),d=Math.ceil((SIX_MONTHS-e)/864e5);return{pct:p,daysLeft:d,soon:d<30}}
+function starsHTML(r){if(!r)return'';return'★'.repeat(Math.floor(r))+(r%1>=0.5?'½':'')+'☆'.repeat(5-Math.ceil(r))}
+function resetGrid(){document.getElementById('grid').innerHTML=emptyHTML('🔍','No results yet','Pick an industry and region above')}
+function showToast(msg,type='success'){
+  const ex=document.querySelector('.toast');if(ex)ex.remove();
+  const t=document.createElement('div');t.className=`toast ${type}`;t.textContent=msg;
+  document.body.appendChild(t);setTimeout(()=>t.remove(),5000);
+}
+
+const PAINS={bakery:['Generic white boxes don\'t reflect the brand — an issue for gift orders and wholesale buyers.','Takeout volume growing; plain packaging misses a key brand touchpoint on delivery apps.','Expanding to markets and pop-ups; needs portable branded packaging that travels well.','Rebranding this season; wants packaging matching the new visual identity.'],furniture:['DTC shipping in plain brown boxes doesn\'t match the premium product inside.','High return damage rate — branded protective packaging would cut this.','Moving from showroom to online; needs packaging that survives courier handling.','New wholesale contract requires professional branded packaging.'],restaurant:['Takeout is 50%+ of revenue; plain containers miss the only brand moment in delivery.','Competitors use strong branded packaging and get social sharing.','Catering arm growing; needs professional branded packaging for corporate clients.','Launching a seasonal menu; wants co-ordinated packaging for the campaign.'],clothing:['Plain poly mailers undercut the premium DTC brand positioning on social.','Wholesale boutique buyers expect branded tissue and bags at every delivery.','Pop-up season approaching; needs bulk branded bags on shorter lead times.','New subscription box tier needs monthly branded packaging.'],real_estate:['Welcome home packages in generic boxes miss a key brand moment at closing.','Listing presentations unpackaged — a branded portfolio box would stand apart.','Growing referral gift program needs packaging reflecting a luxury brand.','Corporate relocation clients expect a polished onboarding kit.']};
+const IND={bakery:{icon:'🧁',label:'Bakery',query:'bakery',pkg:'Custom branded boxes, bags & greaseproof paper'},furniture:{icon:'🪑',label:'Furniture',query:'furniture store',pkg:'Branded transit packaging, corner guards & wraps'},restaurant:{icon:'🍽️',label:'Restaurant',query:'restaurant',pkg:'Custom takeout bags, containers & branded boxes'},clothing:{icon:'👗',label:'Clothing',query:'clothing boutique',pkg:'Branded shopping bags, tissue paper & mailer boxes'},real_estate:{icon:'🏠',label:'Real Estate',query:'real estate agency',pkg:'Branded folders, welcome kits & presentation boxes'}};
+const REGIONS={Toronto:{lat:43.6532,lng:-79.3832},Mississauga:{lat:43.5890,lng:-79.6441},Brampton:{lat:43.7315,lng:-79.7624},Markham:{lat:43.8561,lng:-79.3370},Vaughan:{lat:43.8361,lng:-79.4985},Scarborough:{lat:43.7764,lng:-79.2318},'North York':{lat:43.7615,lng:-79.4111}};
+
+function buildLead(place,indKey,region){
+  const name=place.displayName||'Unknown';
+  return{place_id:place.id,name,address:place.formattedAddress||(region+', ON'),phone:place.nationalPhoneNumber||null,website:place.websiteURI||null,rating:place.rating||null,review_count:place.userRatingCount||0,maps_url:place.googleMapsURI||null,region,industry:IND[indKey].label.toLowerCase(),indKey,packaging_need:IND[indKey].pkg,pain_point:rnd(PAINS[indKey]),ig_search:`https://www.instagram.com/explore/search/keyword/?q=${encodeURIComponent(name)}`,google_search:`https://www.google.com/search?q=${encodeURIComponent(name+' '+region)}`};
+}
+
+// ── SEARCH ────────────────────────────────────────────────────────────────────
+async function searchLeads(){
+  const indKey=document.getElementById('ind').value,region=document.getElementById('reg').value;
+  if(!indKey){setStatus('⚠ Please select an industry first');return}
+  const cfg=IND[indKey],centre=REGIONS[region],btn=document.getElementById('searchBtn');
+  btn.disabled=true;setStatus('Connecting to Google Places…',true);showSkeletons();await loadClaimed();
+  try{await loadGoogleMaps()}catch(e){setStatus('Could not load Google Maps.',false,false,true);document.getElementById('grid').innerHTML=emptyHTML('⚠️','API error',esc(e.message));btn.disabled=false;return}
+  try{
+    setStatus(`Searching for ${cfg.label.toLowerCase()} businesses in ${region}…`,true);
+    const places=await placesSearch(`${cfg.query} in ${region} Ontario Canada`,centre.lat,centre.lng);
+    if(!places.length){setStatus(`No ${cfg.label.toLowerCase()} businesses found in ${region}.`,false,false,true);document.getElementById('grid').innerHTML=emptyHTML('🔍','No results','Try a different region or industry.');btn.disabled=false;return}
+    const leads=places.map(p=>buildLead(p,indKey,region));
+    const fresh=leads.filter(l=>!isClaimed(l));const cc=leads.length-fresh.length;
+    allResults=[...allResults,...fresh];renderLeads(fresh,cfg);
+    let msg=`${fresh.length} ${cfg.label.toLowerCase()} businesses found in ${region}`;if(cc>0)msg+=` · ${cc} already claimed`;
+    setStatus(msg,false,true);document.getElementById('meta').style.display='flex';
+    document.getElementById('metaTxt').innerHTML=`<strong>${fresh.length}</strong> businesses found`;
+  }catch(e){console.error(e);setStatus('Search failed.',false,false,true);document.getElementById('grid').innerHTML=emptyHTML('⚠️','Search failed',esc(e.message||String(e)))}
+  btn.disabled=false;
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function renderLeads(leads,cfg){
+  const grid=document.getElementById('grid');grid.innerHTML='';
+  if(!leads.length){grid.innerHTML=emptyHTML('🔍','No unclaimed leads','All results in this area are claimed by your team.');return}
+  leads.forEach((lead,i)=>{const card=document.createElement('div');card.className='card';card.style.animationDelay=`${i*.04}s`;renderCard(card,lead,cfg);grid.appendChild(card)});
+}
+
+function renderCard(card,lead,cfg){
+  const info=claimInfo(lead),mine=info&&info.by===currentUser,other=info&&info.by!==currentUser;
+  card.className='card'+(mine?' claimed-mine':other?' claimed-other':'');
+  const icon=cfg?cfg.icon:'📦',lbl=cfg?cfg.label:(lead.industry||'');
+  const ratingRow=lead.rating?`<div class="rating-row"><span class="stars">${starsHTML(lead.rating)}</span><span class="rating-num">${lead.rating}</span><span class="review-count">(${(lead.review_count||0).toLocaleString()} reviews)</span></div>`:'';
+  const phoneRow=lead.phone?`<div class="row"><i class="row-ico">📞</i><span class="row-val">${esc(lead.phone)}</span></div>`:`<div class="row"><i class="row-ico">📞</i><span class="row-val missing">Not listed</span></div>`;
+  const webRow=lead.website?`<div class="row"><i class="row-ico">🌐</i><span class="row-val"><a href="${esc(lead.website)}" target="_blank" rel="noopener">${esc(lead.website.replace(/^https?:\/\/(www\.)?/,'').replace(/\/$/,'').split('/')[0])}</a></span></div>`:`<div class="row"><i class="row-ico">🌐</i><span class="row-val missing">Not listed</span></div>`;
+  const mapsRow=lead.maps_url?`<div class="row"><i class="row-ico">🗺</i><span class="row-val"><a href="${esc(lead.maps_url)}" target="_blank" rel="noopener">View on Google Maps</a></span></div>`:'';
+  const mondayBadge=info?.mondayItemId?`<span class="monday-pushed-badge">🟡 On Monday.com</span>`:'';
+  let cs='';
+  if(mine){const ei=expiryInfo(info.claimedAt);cs=`<div class="claim-section"><div class="claim-row"><span class="claim-badge mine">✓ Claimed by you</span>${mondayBadge}<span class="expiry-text ${ei.soon?'soon':''}">Expires in ${ei.daysLeft}d</span></div><div class="expiry-bar"><div class="expiry-fill" style="width:${ei.pct}%;background:${ei.soon?'var(--accent2)':'var(--accent)'}"></div></div></div>`}
+  else if(other){const ei=expiryInfo(info.claimedAt);cs=`<div class="claim-section"><div class="claim-row"><span class="claim-badge">🔒 ${esc(info.by)}</span><span class="expiry-text ${ei.soon?'soon':''}">Frees up in ${ei.daysLeft}d</span></div><div class="expiry-bar"><div class="expiry-fill" style="width:${ei.pct}%;background:#2a2a2a"></div></div></div>`}
+  card.innerHTML=`<div class="real-badge">✓ Verified · Google Places</div><div class="card-top"><div class="card-name">${esc(lead.name)}</div><div class="ind-tag">${icon} ${esc(lbl)}</div></div>${ratingRow}<div class="info-grid"><div class="row"><i class="row-ico">📍</i><span class="row-val">${esc(lead.address)}</span></div>${phoneRow}${webRow}${mapsRow}</div><div class="enrich-row"><a class="enrich-btn ig" href="${esc(lead.ig_search)}" target="_blank" rel="noopener">📸 Instagram</a><a class="enrich-btn" href="${esc(lead.google_search)}" target="_blank" rel="noopener">🔍 Google</a></div><div class="divider"></div><div class="pain-point">"${esc(lead.pain_point)}"</div>${cs}<div class="foot">${other?`<button class="btn-sm" disabled style="opacity:.3;cursor:default">Claimed</button>`:mine?`<button class="btn-sm copy-btn">Copy</button><button class="btn-unclaim">Release Lead</button>`:`<button class="btn-claim">Claim + Push to Monday</button><button class="btn-sm copy-btn">Copy</button>`}</div>`;
+  card.querySelector('.btn-claim')?.addEventListener('click',async()=>{const ok=await claimLead(lead,card.querySelector('.btn-claim'));if(ok){renderCard(card,lead,IND[lead.indKey]||cfg);refreshClaimedTab()}});
+  card.querySelector('.btn-unclaim')?.addEventListener('click',async()=>{if(!confirm('Release this lead for your team?'))return;await unclaimLead(lead);renderCard(card,lead,IND[lead.indKey]||cfg);refreshClaimedTab()});
+  card.querySelector('.copy-btn')?.addEventListener('click',function(){navigator.clipboard.writeText([`Business: ${lead.name}`,`Address: ${lead.address}`,`Phone: ${lead.phone||'Not listed'}`,`Website: ${lead.website||'Not listed'}`,lead.rating?`Rating: ${lead.rating} (${lead.review_count} reviews)`:'',`Google Maps: ${lead.maps_url||'N/A'}`,`Instagram Search: ${lead.ig_search}`,`Packaging Need: ${lead.packaging_need}`].filter(Boolean).join('\n')).then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1600)})});
+}
+
+function showSkeletons(){const g=document.getElementById('grid');g.innerHTML='';for(let i=0;i<8;i++){const c=document.createElement('div');c.className='skeleton-card';c.innerHTML=`<div class="skel" style="width:30%;height:9px;margin-bottom:12px"></div><div class="skel" style="width:65%;height:15px;margin-bottom:12px"></div><div class="skel" style="width:40%;margin-bottom:14px"></div><div class="skel" style="width:85%"></div><div class="skel" style="width:60%;margin-top:8px"></div><div class="skel" style="width:72%;margin-top:8px"></div>`;g.appendChild(c)}}
+
+async function refreshClaimedTab(){
+  await loadClaimed();
+  const c=document.getElementById('claimedList');
+  const entries=Object.values(claimed).sort((a,b)=>b.claimedAt-a.claimedAt);
+  if(!entries.length){c.innerHTML=emptyHTML('🔒','No leads claimed yet','Find and claim leads to track them here');return}
+  c.innerHTML='<div class="claimed-list">'+entries.map(e=>{const ei=expiryInfo(e.claimedAt),mine=e.by===currentUser,mBadge=e.mondayItemId?`<span class="monday-pushed-badge">🟡 Monday.com</span>`:'';return`<div class="claimed-item"><div class="claimed-info"><div class="claimed-name">${esc(e.leadData.name)}${mBadge}</div><div class="claimed-meta">${esc(e.leadData.address||e.leadData.region)} · ${esc(e.leadData.industry||'')}</div></div><span class="claimed-by">${esc(e.by)}${mine?' (you)':''}</span><span class="expiry-text ${ei.soon?'soon':''}">${ei.soon?'⚠ ':''}${ei.daysLeft}d left</span></div>`;}).join('')+'</div>';
+}
+
+function showTab(t){document.getElementById('pane-find').style.display=t==='find'?'block':'none';document.getElementById('pane-claimed').style.display=t==='claimed'?'block':'none';document.getElementById('tab-find').className='tab'+(t==='find'?' active':'');document.getElementById('tab-claimed').className='tab'+(t==='claimed'?' active':'');if(t==='claimed')refreshClaimedTab()}
+function setStatus(msg,loading=false,done=false,err=false){document.getElementById('statusTxt').textContent=msg;document.getElementById('dot').className='dot'+(loading?' on':done?' done':err?' err':'')}
+function copyAll(){const u=allResults.filter(l=>!isClaimed(l));if(!u.length){alert('No unclaimed leads to copy.');return}navigator.clipboard.writeText(u.map(l=>`${l.name} | ${l.address} | ${l.phone||'—'} | ${l.website||'—'} | Rating: ${l.rating||'—'}`).join('\n')).then(()=>alert(`${u.length} leads copied!`))}
+function clearResults(){allResults=[];resetGrid();document.getElementById('meta').style.display='none';setStatus('Select an industry and region to find real GTA businesses')}
+
+(function(){
+  if(loadSettings()){
+    document.getElementById('setupScreen').style.display='none';
+    document.getElementById('loginScreen').style.display='block';
+    const s=localStorage.getItem(SETTINGS_KEY);
+    if(s){try{const p=JSON.parse(s);document.getElementById('googleKeyInput').value=p.googleKey||'';document.getElementById('boardIdInput').value=p.boardId||BOARD_ID_DEFAULT}catch(e){}}
+  }
+})();
+</script>
+</body>
+</html>
