@@ -455,7 +455,9 @@ const INDUSTRY_NOISE = new Set([
   'homes','group','foods','food','fresh','artisan','fine','specialty',
   'goods','imports','coffee','baking','roasters','creamery','dairy',
   'farm','farms','orchard','orchards','winery','brewery','butcher',
-  'toronto','gta','ontario','canada','north','south','east','west'
+  'bakeshop','bake','sweets','sweet','treats','delights','deli','catering',
+  'toronto','gta','ontario','canada','north','south','east','west',
+  'downtown','uptown','midtown','village','square','avenue','street'
 ]);
 
 // Strip noise words, return meaningful words only
@@ -488,9 +490,9 @@ function fuzzyNameMatch(a, b){
   // Require at least 2 overlapping keywords
   if(overlap.length >= 2) return true;
 
-  // Level 4: single keyword only if it's very long (>7 chars) AND unique-sounding
-  // e.g. "brodflour", "summerhill", "chocolateka" — not "patisserie", "boutique"
-  return overlap.some(w=>w.length > 7 && !INDUSTRY_NOISE.has(w));
+  // Level 4: single keyword only if it's very long (>9 chars) AND unique-sounding
+  // e.g. "summerhill", "chocolateka" — not "patisserie", "bakeshop"
+  return overlap.some(w=>w.length > 9 && !INDUSTRY_NOISE.has(w));
 }
 
 function isDuplicate(lead){
