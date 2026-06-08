@@ -543,7 +543,7 @@ async function pushToMonday(lead, claimedBy){
   const columnValues = {
     "status":          {"index": 4},
     "color_mkxn2cj1": {"index": 14},
-    "text_mkxp63nr":  lead.contactName || '',
+    "text_mkxp63nr":  lead.contactName || lead.name,
     ...(userId ? {"person": {"personsAndTeams": [{"id": parseInt(userId), "kind": "person"}]}} : {})
   };
 
