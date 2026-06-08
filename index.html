@@ -430,15 +430,42 @@ async function fetchMondayExistingItems(){
   return mondayExistingItems;
 }
 
+// Strip noise words and punctuation, return array of meaningful words
+function keyWords(str){
+  const noise = new Set(['the','a','an','and','or','of','in','at','by','for',
+    'to','inc','ltd','llc','co','corp','cafe','restaurant','bakery','shop',
+    'store','boutique','group','agency','realty','homes','living','design',
+    'studio','kitchen','bar','grill','bistro','house','club','market','place',
+    'centre','center','toronto','gta','ontario','canada']);
+  return (str||'').toLowerCase()
+    .replace(/[^a-z0-9\s]/g,' ')
+    .split(/\s+/)
+    .filter(w=>w.length>1 && !noise.has(w));
+}
+
+function fuzzyNameMatch(a, b){
+  const wa = keyWords(a);
+  const wb = keyWords(b);
+  if(!wa.length || !wb.length) return false;
+  // Check if any key word from one appears in the other
+  const overlap = wa.filter(w=>wb.includes(w));
+  // Require at least 1 matching word AND it must be >2 chars (avoid single-letter matches)
+  return overlap.some(w=>w.length>2);
+}
+
 function isDuplicate(lead){
   if(!mondayExistingItems || !mondayExistingItems.length) return false;
   const leadName  = (lead.name||'').toLowerCase().trim();
-  const leadPhone = (lead.phone||'').replace(/\D/g,'');
-  return mondayExistingItems.some(item=>{
-    const nameMatch  = item.name  && leadName  && item.name === leadName;
+  const leadPhone = (lead.phone||'').replace(/[^0-9]/g,'');
+  const match = mondayExistingItems.find(item=>{
     const phoneMatch = item.phone && leadPhone && item.phone === leadPhone;
-    return nameMatch || phoneMatch;
+    const nameMatch  = fuzzyNameMatch(leadName, item.name);
+    return phoneMatch || nameMatch;
   });
+  if(match){
+    console.log(`Duplicate found: "${lead.name}" matches Monday item "${match.name}"`);
+  }
+  return !!match;
 }
 
 async function checkMondayConnection(){
