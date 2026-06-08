@@ -419,7 +419,8 @@ async function fetchMondayExistingItems(){
         }
       }
     `, {boardId: String(BOARD_ID)});
-    const ACTIVE_GROUPS = ['group_mm14fj0y','topics','group_mkywp1g0','group_title','group_mky0v7t'];
+    // Only check Jennifer (topics) and Phil (group_mkywp1g0) groups for duplicates
+    const ACTIVE_GROUPS = ['topics','group_mkywp1g0'];
     const allItems = res?.data?.boards?.[0]?.items_page?.items || [];
     const activeGroupItems = allItems.filter(item=>
       ACTIVE_GROUPS.includes(item.group?.id)
