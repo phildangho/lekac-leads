@@ -15,6 +15,9 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;padding:32px 24px}
 
+/* ── DUPLICATE BADGE ── */
+.dupe-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;padding:2px 7px;border-radius:3px;background:rgba(240,160,48,.1);color:var(--accent2);border:1px solid rgba(240,160,48,.25);margin-bottom:8px}
+
 /* ── CLAIMED SUB-TABS ── */
 .sub-tabs{display:flex;gap:2px;margin-bottom:20px;background:var(--surface);border-radius:var(--radius-sm);padding:3px;width:100%;border:1px solid var(--border)}
 .sub-tab{flex:1;padding:7px 10px;border-radius:4px;font-size:12px;cursor:pointer;color:var(--muted2);border:none;background:none;font-family:'DM Sans',sans-serif;transition:background .15s,color .15s;text-align:center;white-space:nowrap}
@@ -393,6 +396,51 @@ async function mondayQuery(query, variables={}){
   return data;
 }
 
+// Fetch all existing item names and phones from Monday board for duplicate checking
+let mondayExistingItems = null;
+
+async function fetchMondayExistingItems(){
+  if(mondayExistingItems !== null) return mondayExistingItems;
+  try{
+    // Fetch up to 500 items from the board — covers most boards
+    const res = await mondayQuery(`
+      query($boardId: ID!) {
+        boards(ids: [$boardId]) {
+          items_page(limit: 500) {
+            items {
+              name
+              column_values(ids: ["phone_mkxn7m65"]) {
+                text
+              }
+            }
+          }
+        }
+      }
+    `, {boardId: String(BOARD_ID)});
+    const items = res?.data?.boards?.[0]?.items_page?.items || [];
+    mondayExistingItems = items.map(item=>({
+      name:  (item.name||'').toLowerCase().trim(),
+      phone: (item.column_values?.[0]?.text||'').replace(/\D/g,'')
+    }));
+    console.log(`Loaded ${mondayExistingItems.length} existing Monday items for duplicate check`);
+  } catch(e){
+    console.warn('Could not fetch Monday items for duplicate check:', e.message);
+    mondayExistingItems = [];
+  }
+  return mondayExistingItems;
+}
+
+function isDuplicate(lead){
+  if(!mondayExistingItems || !mondayExistingItems.length) return false;
+  const leadName  = (lead.name||'').toLowerCase().trim();
+  const leadPhone = (lead.phone||'').replace(/\D/g,'');
+  return mondayExistingItems.some(item=>{
+    const nameMatch  = item.name  && leadName  && item.name === leadName;
+    const phoneMatch = item.phone && leadPhone && item.phone === leadPhone;
+    return nameMatch || phoneMatch;
+  });
+}
+
 async function checkMondayConnection(){
   try{
     // Also fetch board groups at login time so routing is ready
@@ -566,6 +614,8 @@ function login(){
   document.getElementById('routingInfo').innerHTML=`<strong>Signed in as ${esc(n)}</strong> — your claimed leads will go to <strong style="color:var(--monday)">${esc(groupName)}</strong> on Monday.com, with Status: <strong>"New Lead Created"</strong> and Type: <strong>"General Presale"</strong>.`;
   loadClaimed();
   checkMondayConnection();
+  // Pre-load Monday items in background for duplicate checking
+  fetchMondayExistingItems();
 }
 function logout(){
   currentUser='';allResults=[];boardGroupsCache=null;
@@ -603,6 +653,7 @@ async function searchLeads(){
   if(!indKey){setStatus('⚠ Please select an industry first');return}
   const cfg=IND[indKey],centre=REGIONS[region],btn=document.getElementById('searchBtn');
   btn.disabled=true;setStatus('Connecting to Google Places…',true);showSkeletons();await loadClaimed();
+  mondayExistingItems=null; // refresh duplicate cache on each new search
   try{await loadGoogleMaps()}catch(e){setStatus('Could not load Google Maps.',false,false,true);document.getElementById('grid').innerHTML=emptyHTML('⚠️','API error',esc(e.message));btn.disabled=false;return}
   try{
     setStatus(`Searching for ${cfg.label.toLowerCase()} businesses in ${region}…`,true);
@@ -637,6 +688,10 @@ function renderCard(card,lead,cfg){
   let cs='';
   if(mine){const ei=expiryInfo(info.claimedAt);cs=`<div class="claim-section"><div class="claim-row"><span class="claim-badge mine">✓ Claimed by you</span>${mondayBadge}<span class="expiry-text ${ei.soon?'soon':''}">Expires in ${ei.daysLeft}d</span></div><div class="expiry-bar"><div class="expiry-fill" style="width:${ei.pct}%;background:${ei.soon?'var(--accent2)':'var(--accent)'}"></div></div></div>`}
   else if(other){const ei=expiryInfo(info.claimedAt);cs=`<div class="claim-section"><div class="claim-row"><span class="claim-badge">🔒 ${esc(info.by)}</span><span class="expiry-text ${ei.soon?'soon':''}">Frees up in ${ei.daysLeft}d</span></div><div class="expiry-bar"><div class="expiry-fill" style="width:${ei.pct}%;background:#2a2a2a"></div></div></div>`}
+  // Duplicate check
+  const dupe = isDuplicate(lead);
+  const dupeBadge = dupe ? `<div class="dupe-badge">⚠ Already on Monday board</div>` : '';
+
   // Contact name input only shown on unclaimed cards
   const contactInputHtml = (!mine && !other) ? `
     <div class="contact-input-wrap">
@@ -644,7 +699,7 @@ function renderCard(card,lead,cfg){
       <input class="contact-input" placeholder="e.g. Sarah Kim, Owner" maxlength="80">
     </div>` : '';
 
-  card.innerHTML=`<div class="real-badge">✓ Verified · Google Places</div><div class="card-top"><div class="card-name">${esc(lead.name)}</div><div class="ind-tag">${icon} ${esc(lbl)}</div></div>${ratingRow}<div class="info-grid"><div class="row"><i class="row-ico">📍</i><span class="row-val">${esc(lead.address)}</span></div>${phoneRow}${webRow}${mapsRow}</div><div class="enrich-row"><a class="enrich-btn ig" href="${esc(lead.ig_search)}" target="_blank" rel="noopener">📸 Instagram</a><a class="enrich-btn" href="${esc(lead.google_search)}" target="_blank" rel="noopener">🔍 Google</a></div><div class="divider"></div><div class="pain-point">"${esc(lead.pain_point)}"</div>${contactInputHtml}${cs}<div class="foot">${other?`<button class="btn-sm" disabled style="opacity:.3;cursor:default">Claimed</button>`:mine?`<button class="btn-sm copy-btn">Copy</button><button class="btn-unclaim">Release Lead</button>`:`<button class="btn-claim">Claim + Push to Monday</button><button class="btn-sm copy-btn">Copy</button>`}</div>`;
+  card.innerHTML=`<div class="real-badge">✓ Verified · Google Places</div>${dupeBadge}<div class="card-top"><div class="card-name">${esc(lead.name)}</div><div class="ind-tag">${icon} ${esc(lbl)}</div></div>${ratingRow}<div class="info-grid"><div class="row"><i class="row-ico">📍</i><span class="row-val">${esc(lead.address)}</span></div>${phoneRow}${webRow}${mapsRow}</div><div class="enrich-row"><a class="enrich-btn ig" href="${esc(lead.ig_search)}" target="_blank" rel="noopener">📸 Instagram</a><a class="enrich-btn" href="${esc(lead.google_search)}" target="_blank" rel="noopener">🔍 Google</a></div><div class="divider"></div><div class="pain-point">"${esc(lead.pain_point)}"</div>${contactInputHtml}${cs}<div class="foot">${other?`<button class="btn-sm" disabled style="opacity:.3;cursor:default">Claimed</button>`:mine?`<button class="btn-sm copy-btn">Copy</button><button class="btn-unclaim">Release Lead</button>`:`<button class="btn-claim">Claim + Push to Monday</button><button class="btn-sm copy-btn">Copy</button>`}</div>`;
   card.querySelector('.btn-claim')?.addEventListener('click',async()=>{
     // Read contact name from input field before claiming
     const contactInput = card.querySelector('.contact-input');
@@ -734,7 +789,7 @@ function renderClaimedSection(containerId, entries){
 function showTab(t){document.getElementById('pane-find').style.display=t==='find'?'block':'none';document.getElementById('pane-claimed').style.display=t==='claimed'?'block':'none';document.getElementById('tab-find').className='tab'+(t==='find'?' active':'');document.getElementById('tab-claimed').className='tab'+(t==='claimed'?' active':'');if(t==='claimed')refreshClaimedTab()}
 function setStatus(msg,loading=false,done=false,err=false){document.getElementById('statusTxt').textContent=msg;document.getElementById('dot').className='dot'+(loading?' on':done?' done':err?' err':'')}
 function copyAll(){const u=allResults.filter(l=>!isClaimed(l));if(!u.length){alert('No unclaimed leads to copy.');return}navigator.clipboard.writeText(u.map(l=>`${l.name} | ${l.address} | ${l.phone||'—'} | ${l.website||'—'} | Rating: ${l.rating||'—'}`).join('\n')).then(()=>alert(`${u.length} leads copied!`))}
-function clearResults(){allResults=[];resetGrid();document.getElementById('meta').style.display='none';setStatus('Select an industry and region to find real GTA businesses')}
+function clearResults(){allResults=[];resetGrid();mondayExistingItems=null;document.getElementById('meta').style.display='none';setStatus('Select an industry and region to find real GTA businesses')}
 
 (function(){
   if(loadSettings()){
