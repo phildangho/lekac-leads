@@ -444,40 +444,53 @@ function normaliseName(str){
     .trim();
 }
 
-// Strip noise words and punctuation, return array of meaningful words
+// Words that are too generic to use as a sole match signal
+const INDUSTRY_NOISE = new Set([
+  'the','a','an','and','or','of','in','at','by','for','to',
+  'inc','ltd','llc','co','corp','company',
+  // Industry words — common across many businesses, never match alone
+  'cafe','bakery','patisserie','boulangerie','restaurant','bistro','brasserie',
+  'shop','store','boutique','market','kitchen','bar','grill','house','club',
+  'place','centre','center','studio','design','living','agency','realty',
+  'homes','group','foods','food','fresh','artisan','fine','specialty',
+  'goods','imports','coffee','baking','roasters','creamery','dairy',
+  'farm','farms','orchard','orchards','winery','brewery','butcher',
+  'toronto','gta','ontario','canada','north','south','east','west'
+]);
+
+// Strip noise words, return meaningful words only
 function keyWords(str){
-  const noise = new Set(['the','a','an','and','or','of','in','at','by','for',
-    'to','inc','ltd','llc','co','corp','cafe','restaurant','bakery','shop',
-    'store','boutique','group','agency','realty','homes','living','design',
-    'studio','kitchen','bar','grill','bistro','house','club','market','place',
-    'centre','center','toronto','gta','ontario','canada','baking','coffee',
-    'foods','food','fresh','artisan','fine','specialty','goods','imports']);
   return (str||'').toLowerCase()
     .replace(/[^a-z0-9\s]/g,' ')
     .split(/\s+/)
-    .filter(w=>w.length>2 && !noise.has(w));
+    .filter(w=>w.length>2 && !INDUSTRY_NOISE.has(w));
 }
 
 function fuzzyNameMatch(a, b){
-  // Level 1: exact normalised match (strips punctuation/spaces)
+  // Level 1: exact normalised match — strips all punctuation/spaces/accents
   const na = normaliseName(a);
   const nb = normaliseName(b);
   if(na && nb && na === nb) return true;
 
-  // Level 2: one contains the other (catches "Blackbird Baking Co" vs "Blackbird Baking Co.")
-  if(na.length > 4 && nb.length > 4){
+  // Level 2: one fully contains the other (e.g. "Blackbird Baking Co" vs "Blackbird Baking Co.")
+  // Only if the shorter string is at least 6 chars to avoid short false matches
+  if(na.length >= 6 && nb.length >= 6){
     if(na.includes(nb) || nb.includes(na)) return true;
   }
 
-  // Level 3: keyword overlap — 2+ matching meaningful words
+  // Level 3: must have 2+ meaningful keyword overlap
+  // (single word matches like "patisserie" are NOT enough)
   const wa = keyWords(a);
   const wb = keyWords(b);
   if(!wa.length || !wb.length) return false;
   const overlap = wa.filter(w=>wb.includes(w));
+
+  // Require at least 2 overlapping keywords
   if(overlap.length >= 2) return true;
 
-  // Level 4: single strong keyword match (word > 5 chars)
-  return overlap.some(w=>w.length > 5);
+  // Level 4: single keyword only if it's very long (>7 chars) AND unique-sounding
+  // e.g. "brodflour", "summerhill", "chocolateka" — not "patisserie", "boutique"
+  return overlap.some(w=>w.length > 7 && !INDUSTRY_NOISE.has(w));
 }
 
 function isDuplicate(lead){
