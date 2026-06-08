@@ -404,8 +404,6 @@ async function fetchMondayExistingItems(){
   try{
     // Fetch up to 500 items from the board — covers most boards
     // Check for duplicates within the four active client groups on the main board
-    // This avoids checking unrelated items from other groups
-    const ACTIVE_GROUPS = ['group_mm14fj0y','topics','group_mkywp1g0','group_title','group_mky0v7t'];
     const res = await mondayQuery(`
       query($boardId: ID!) {
         boards(ids: [$boardId]) {
@@ -421,9 +419,8 @@ async function fetchMondayExistingItems(){
         }
       }
     `, {boardId: String(BOARD_ID)});
-    const allItems = res?.data?.boards?.[0]?.items_page?.items || [];
-    // Only flag duplicates from the active client groups — not unrelated board items
     const ACTIVE_GROUPS = ['group_mm14fj0y','topics','group_mkywp1g0','group_title','group_mky0v7t'];
+    const allItems = res?.data?.boards?.[0]?.items_page?.items || [];
     const activeGroupItems = allItems.filter(item=>
       ACTIVE_GROUPS.includes(item.group?.id)
     );
