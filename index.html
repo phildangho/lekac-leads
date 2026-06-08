@@ -490,6 +490,8 @@ function isDuplicate(lead){
   });
   if(match){
     console.log(`Duplicate found: "${lead.name}" matches Monday item "${match.name}"`);
+  } else {
+    console.log(`No duplicate for: "${lead.name}" (checked ${mondayExistingItems.length} items)`);
   }
   return !!match;
 }
@@ -714,7 +716,11 @@ async function searchLeads(){
     if(!places.length){setStatus(`No ${cfg.label.toLowerCase()} businesses found in ${region}.`,false,false,true);document.getElementById('grid').innerHTML=emptyHTML('🔍','No results','Try a different region or industry.');btn.disabled=false;return}
     const leads=places.map(p=>buildLead(p,indKey,region));
     const fresh=leads.filter(l=>!isClaimed(l));const cc=leads.length-fresh.length;
-    allResults=[...allResults,...fresh];renderLeads(fresh,cfg);
+    allResults=[...allResults,...fresh];
+    // Wait for Monday items to load before rendering so duplicate badges show correctly
+    setStatus('Checking for duplicates on Monday board…',true);
+    await fetchMondayExistingItems();
+    renderLeads(fresh,cfg);
     let msg=`${fresh.length} ${cfg.label.toLowerCase()} businesses found in ${region}`;if(cc>0)msg+=` · ${cc} already claimed`;
     setStatus(msg,false,true);document.getElementById('meta').style.display='flex';
     document.getElementById('metaTxt').innerHTML=`<strong>${fresh.length}</strong> businesses found`;
