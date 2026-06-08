@@ -403,6 +403,8 @@ async function fetchMondayExistingItems(){
   if(mondayExistingItems !== null) return mondayExistingItems;
   try{
     // Fetch up to 500 items from the board — covers most boards
+    // Use Follow-Up Progress 2026 board for duplicate checking (not the main BD board)
+    const FOLLOWUP_BOARD_ID = '245837972';
     const res = await mondayQuery(`
       query($boardId: ID!) {
         boards(ids: [$boardId]) {
@@ -416,7 +418,7 @@ async function fetchMondayExistingItems(){
           }
         }
       }
-    `, {boardId: String(BOARD_ID)});
+    `, {boardId: FOLLOWUP_BOARD_ID});
     const items = res?.data?.boards?.[0]?.items_page?.items || [];
     mondayExistingItems = items.map(item=>({
       name:  (item.name||'').toLowerCase().trim(),
