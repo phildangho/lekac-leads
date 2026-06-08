@@ -436,27 +436,47 @@ async function fetchMondayExistingItems(){
   return mondayExistingItems;
 }
 
+// Normalise a string for comparison — strip punctuation, spaces, common suffixes
+function normaliseName(str){
+  return (str||'').toLowerCase()
+    .replace(/[^a-z0-9]/g,'') // strip ALL non-alphanumeric
+    .trim();
+}
+
 // Strip noise words and punctuation, return array of meaningful words
 function keyWords(str){
   const noise = new Set(['the','a','an','and','or','of','in','at','by','for',
     'to','inc','ltd','llc','co','corp','cafe','restaurant','bakery','shop',
     'store','boutique','group','agency','realty','homes','living','design',
     'studio','kitchen','bar','grill','bistro','house','club','market','place',
-    'centre','center','toronto','gta','ontario','canada']);
+    'centre','center','toronto','gta','ontario','canada','baking','coffee',
+    'foods','food','fresh','artisan','fine','specialty','goods','imports']);
   return (str||'').toLowerCase()
     .replace(/[^a-z0-9\s]/g,' ')
     .split(/\s+/)
-    .filter(w=>w.length>1 && !noise.has(w));
+    .filter(w=>w.length>2 && !noise.has(w));
 }
 
 function fuzzyNameMatch(a, b){
+  // Level 1: exact normalised match (strips punctuation/spaces)
+  const na = normaliseName(a);
+  const nb = normaliseName(b);
+  if(na && nb && na === nb) return true;
+
+  // Level 2: one contains the other (catches "Blackbird Baking Co" vs "Blackbird Baking Co.")
+  if(na.length > 4 && nb.length > 4){
+    if(na.includes(nb) || nb.includes(na)) return true;
+  }
+
+  // Level 3: keyword overlap — 2+ matching meaningful words
   const wa = keyWords(a);
   const wb = keyWords(b);
   if(!wa.length || !wb.length) return false;
-  // Check if any key word from one appears in the other
   const overlap = wa.filter(w=>wb.includes(w));
-  // Require at least 1 matching word AND it must be >2 chars (avoid single-letter matches)
-  return overlap.some(w=>w.length>2);
+  if(overlap.length >= 2) return true;
+
+  // Level 4: single strong keyword match (word > 5 chars)
+  return overlap.some(w=>w.length > 5);
 }
 
 function isDuplicate(lead){
